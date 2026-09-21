@@ -22,10 +22,14 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
 from ingest import Document
+
+REPLY_HEADER = re.compile(r"^--- reply \d+.*?---$", re.MULTILINE)
+MAX_REPLIES_PER_CHUNK = 2
 
 
 @dataclass
@@ -97,7 +101,45 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
       - Would splitting on paragraph breaks keep more thoughts intact than
         splitting on a character count?
     """
-    return fallback_split(documents)
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        headers = list(REPLY_HEADER.finditer(doc.text))
+
+        if not headers:
+            text = doc.text.strip()
+            if text:
+                chunks.append(
+                    Chunk(
+                        text=text,
+                        source=doc.source,
+                        index=0,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+            continue
+
+        title = doc.text[: headers[0].start()].strip()
+
+        replies = []
+        for i, header in enumerate(headers):
+            start = header.start()
+            end = headers[i + 1].start() if i + 1 < len(headers) else len(doc.text)
+            replies.append(doc.text[start:end].strip())
+
+        for index, group_start in enumerate(range(0, len(replies), MAX_REPLIES_PER_CHUNK)):
+            group = replies[group_start : group_start + MAX_REPLIES_PER_CHUNK]
+            text = "\n\n".join([title, *group])
+            chunks.append(
+                Chunk(
+                    text=text,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
