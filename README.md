@@ -101,27 +101,42 @@ Boots with actual tread. The path past the pond ices over and people go down on 
 <!-- One complete question and answer, pasted as text, with the source line
      visible. Milestone 4. -->
 
-**Question:**
+**Question:** Is there a quiet study spot near or on campus?
 
 **Answer:**
 
 ```
+Yes, there are several quiet study spots mentioned:
+* Ridgeway Café before 10am is described as empty and quiet (thread_study_spots.txt).
+* The library third floor reliably delivers silence (thread_study_spots.txt).
+* The science building has open lounges on floors 2 through 5 that are unlocked and almost always empty (thread_study_spots.txt).
 ```
+
+Sources retrieved: thread_commuting.txt, thread_office_hours_etiquette.txt, thread_roommate_conflict.txt, thread_study_spots.txt
+
+Retrieval (top-k 5) pulled in three unrelated threads alongside the right one, but the
+answer only cites `thread_study_spots.txt` — the grounding instruction filtered the
+noise rather than working stray details from the other three into the answer.
 
 **My relevance cutoff:**
 
-<!-- The number you set in config.py, and how you got there.
-
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+I kept `THRESHOLD = 0.6`. The five in-corpus questions all landed between 0.315
+and 0.421; the five out-of-scope questions all landed between 0.806 and 0.938.
+That leaves a clean gap from 0.421 to 0.806 with nothing in it, and 0.6 sits
+almost exactly in the middle of that gap rather than hugging either edge.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| Is there a quiet study spot near or on campus? | yes | 0.347 |
+| When should I apply for internships? | yes | 0.315 |
+| Do I need to get the latest edition for every textbook? | yes | 0.359 |
+| What kind of laptop specs should I look for when buying a laptop for school? | yes | 0.401 |
+| What is the policy for pass/fail declaration? | yes | 0.421 |
+| What is the recommended dosage of ibuprofen for a headache? | no | 0.806 |
+| How do I write a for loop in Rust? | no | 0.827 |
+| Who won the 1994 World Cup? | no | 0.893 |
+| How do I change the oil in a diesel engine? | no | 0.896 |
+| What is the capital of Mongolia? | no | 0.938 |
 
 ## How I Used AI
 
