@@ -1,6 +1,6 @@
 # The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
+Giao Nguyen. Corpus: `advice_threads`.
 
 > **This file is your submission.** Fill it in as you go — most sections get
 > written during the milestone that produces them, not at the end.
@@ -22,12 +22,12 @@
 ## What This Does
 
 This is a retrieval-augmented question answerer built on the `advice_threads`
-corpus — 23 student advice-forum threads (study spots, textbook editions,
+corpus, 23 student advice-forum threads (study spots, textbook editions,
 internship timing, pass/fail policy, laptop specs, and similar) split into 46
 chunks. Ask it a question the threads actually cover and it retrieves the
 relevant reply, answers from it, and names the source file. Ask it something
-the corpus doesn't cover — anything from a different world entirely, like
-world history or car maintenance — and a relevance gate refuses before the
+the corpus doesn't cover, anything from a different world entirely, like
+world history or car maintenance, and a relevance gate refuses before the
 question ever reaches the model, instead of letting it guess.
 
 ## Chunking Strategy
@@ -143,18 +143,34 @@ almost exactly in the middle of that gap rather than hugging either edge.
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1. The `split_documents` rewrite.** I asked Claude to rewrite
+`split_documents()` to fix the bundling problem diagnosed in `criteria.md`:
+split on `--- reply N ---` boundaries instead of raw character count, and
+glue the thread title onto each chunk so it stays self-contained (needed
+because my shortest lone reply is only 35 characters). It came back with a
+regex split (`REPLY_HEADER = re.compile(r"^--- reply \d+.*?---$",
+re.MULTILINE)`) that groups replies into chunks of at most 2
+(`MAX_REPLIES_PER_CHUNK = 2`), prepends the title to every group, and falls
+back to treating the whole document as one chunk if no reply markers are
+found at all — that fallback wasn't something I asked for, Claude added it
+defensively for documents that don't match the thread format. I kept it since
+it costs nothing and doesn't affect my corpus (every document in
+`advice_threads` has reply markers), but I didn't just trust the summary: I
+ran `python app.py chunks -n 46` myself and checked the shortest chunk by
+hand (157 characters, `thread_clubs.txt#1`) to confirm the floor actually
+holds on the real trailing-lone-reply case, not just in theory.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2. Catching a milestone-ordering mistake in my criteria.** While drafting
+the "why this target" reasoning for criteria 1 and 3 in `criteria.md`, I
+asked Claude whether both needed rewriting given the chunking work I'd
+already done. It answered by conflating all five criteria under the same
+"write it blind, before you have results" rule. I caught the inconsistency by
+pasting the actual Milestone 2 instructions back at it, which forced a
+correction distinguishing criteria that can legitimately be reasoned from
+corpus structure alone (like #1) from ones that specifically need a real
+measured result before the "why" can be honest (like #3). I rewrote the
+criterion 3 reasoning myself once I understood the distinction, instead of
+letting the blanket answer stand.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
