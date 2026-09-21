@@ -29,53 +29,71 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** Not a fixed character count, at most 2 replies per chunk plus the thread title. In practice that produces chunks ranging from 157 to 423 characters (297 on average) across my 23 documents.
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
+**Overlap:** 0 characters. Splits land on `--- reply N ---` markers, not raw character offsets, so there's no boundary left to protect with overlap.
 
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
+I didn't start here. My first strategy was `fallback_split`'s fixed-size window, and I picked `chunk_size=1050` / `overlap=124` for it based on what I actually measured in my corpus: my longest document is 794 characters and my longest single sentence is 124 characters. I set the window's step (`chunk_size - overlap`) above 794 so it would never slice a document into a real chunk plus a meaningless leftover tail (the original `chunk_size=800`/`overlap=120` defaults did exactly that to 3 of my documents, producing a 2-character garbage chunk), and set the overlap to 124 to cover my longest sentence in case a split ever did happen.
 
-     Milestone 3. -->
+That fixed the fragment problem, but reading the resulting chunks surfaced a second, separate issue no character count could fix: threads with 4-5 replies (like `thread_bike_commute.txt`) still had every reply crammed into one chunk, mixing unrelated sub-questions, bike storage, winter durability, theft registration, into a single result that matched several different questions a little and none of them well. That's a bundling problem, not a size problem, so I replaced `split_documents` entirely instead of continuing to tune the window. `CHUNK_SIZE`/`CHUNK_OVERLAP` in `config.py` are still set to 1050/124 and `fallback_split` still uses them for comparison, but the final `split_documents` doesn't use raw size or overlap at all, it cuts on the corpus's own structure instead. The result: 23 documents produce 46 chunks, shortest 157 characters and longest 423, with no chunk ever bundling more than 2 replies.
 
 ## Sample Chunks
 
-<!-- Five chunks, pasted as text. Label each one and name the file it came from
-     AND the function that produced it — the grader checks your code against
-     what you claim here.
-
-     `python app.py chunks -n 5` prints all three for you. Copy them straight
-     across.
-
-     Milestone 3. -->
-
-**Chunk 1** — source: `` — produced by: ``
+**Chunk 1** — source: `thread_bike_commute.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+THREAD: Is a bike worth it for a 20 minute walk commute?
+
+--- reply 1 (14 votes) ---
+Yeah. Cuts an 18 minute walk to about 6. The thing nobody mentions is storage — covered bike parking exists at three buildings and is full by 9am at all three.
+
+--- reply 2 (9 votes) ---
+Counterpoint, I sold mine. Between November and March the paths are either icy or salted and salt destroys a drivetrain in one season.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+**Chunk 2** — source: `thread_bike_commute.txt#1` — produced by: `chunker.py::split_documents`
 
 ```
+THREAD: Is a bike worth it for a 20 minute walk commute?
+
+--- reply 3 (22 votes) ---
+Both true. I keep a cheap bike for September to November and walk the rest of the year. Total cost was about $120 for the bike and I don't care what happens to it.
+
+--- reply 4 (5 votes) ---
+If you do get one, the campus does free registration and it's the only reason I got mine back after it was taken.
 ```
 
-**Chunk 3** — source: `` — produced by: ``
+**Chunk 3** — source: `thread_clubs.txt#1` — produced by: `chunker.py::split_documents`
 
 ```
+THREAD: How many clubs is too many?
+
+--- reply 3 (18 votes) ---
+If you want a leadership position later, depth in one is worth more than breadth across five.
 ```
 
-**Chunk 4** — source: `` — produced by: ``
+**Chunk 4** — source: `thread_meal_plan_tier.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+THREAD: Which meal plan tier is right?
+
+--- reply 1 (24 votes) ---
+Depends entirely on whether your building has a kitchen. Fenwick has kitchenettes, so people there go down a tier and cook two or three nights. Everywhere else, get the middle tier.
+
+--- reply 2 (19 votes) ---
+The highest tier only makes sense if you eat three meals a day in the halls every single day, which basically nobody does past October.
 ```
 
-**Chunk 5** — source: `` — produced by: ``
+**Chunk 5** — source: `thread_winter_advice.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+THREAD: First winter here — what do I need?
+
+--- reply 1 (26 votes) ---
+Layers, not a big coat. The buildings are overheated and you'll carry a parka around all day.
+
+--- reply 2 (31 votes) ---
+Boots with actual tread. The path past the pond ices over and people go down on it every year.
 ```
 
 ## Sample Answer
