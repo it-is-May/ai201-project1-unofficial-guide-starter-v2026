@@ -21,11 +21,14 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This is a retrieval-augmented question answerer built on the `advice_threads`
+corpus — 23 student advice-forum threads (study spots, textbook editions,
+internship timing, pass/fail policy, laptop specs, and similar) split into 46
+chunks. Ask it a question the threads actually cover and it retrieves the
+relevant reply, answers from it, and names the source file. Ask it something
+the corpus doesn't cover — anything from a different world entirely, like
+world history or car maintenance — and a relevance gate refuses before the
+question ever reaches the model, instead of letting it guess.
 
 ## Chunking Strategy
 
