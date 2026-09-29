@@ -222,11 +222,11 @@ letting the blanket answer stand.
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | Target was 4/5; all 3 runs scored 4/5, consistently missing only the textbook edition question. |
+| 2 | Every answer names a source | MET | Target was 5/5; all generated answers across all 3 runs cited their source file. |
+| 3 | Gate stops out-of-corpus questions | MET | Target was 4/5; the relevance gate blocked all 5/5 out-of-scope questions across all runs. |
+| 4 | Chunks are the right size and don't bundle too many replies | MET | Target was 4/5; all 46 chunks pass the 50+ char floor and cap reply bundling at 2 per chunk. |
+| 5 | Answers don't state facts the source doesn't back up | MET | Target was 4/5; all dates, stats, and numbers in the answers match the retrieved thread chunks. |
 
 ## Diagnoses
 
