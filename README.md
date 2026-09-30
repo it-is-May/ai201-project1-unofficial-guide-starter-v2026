@@ -249,32 +249,28 @@ Because every criterion passed on the first try, the original targets were set t
 
 **What I changed:**
 
+Modified `_split_candidates` in `scorer.py` to recognize `,` alongside `;` and `|` as a delimiter, so it can split multi-phrase expectation candidates like `"math and physics, ask the instructor"` into individual phrases.
+
 **Why I picked it:**
 
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+The Criterion 1 diagnosis traced Question 3's recurring failure to the scorer, not the pipeline: retrieval and generation both produced a correct, grounded answer, but `scorer.py`'s exact-phrase matching couldn't recognize it because the expected phrase used a comma the splitter didn't handle.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+- **When:** 2026-09-29 20:11
+- **Target:** 5 of 5 on Criterion 1
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieval finds target chunk | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 2. Answer grounded in context | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 3. Refuses out-of-scope | 4 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 4. Cites sources | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 5. Free of hallucinations | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
 
 **Did it help?**
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
-
-     Milestone 4. -->
+Yes. Question 3 moved from `FAIL` to `pass` across all three evaluation runs, bringing Criterion 1 from 4/5 to 5/5 — the fix targeted the scorer bug identified in the diagnosis, not the retrieval or generation pipeline, and the result confirms that was the actual cause.
 
 ## What's Still Broken
 

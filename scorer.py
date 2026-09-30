@@ -30,14 +30,14 @@ def _normalize(text: str) -> str:
 def _split_candidates(expects: str) -> list[str]:
     """Split an `expects` string into individual candidate phrases.
 
-    Candidates may be separated by ';' or '|'. Empty/whitespace-only
+    Candidates may be separated by ',', ';', or '|'. Empty/whitespace-only
     candidates are dropped.
     """
     if not expects:
         return []
 
-    # Split on either delimiter.
-    raw_candidates = re.split(r"[;|]", expects)
+    # Split on comma, semicolon, or vertical bar
+    raw_candidates = re.split(r"[,;|]", expects)
 
     candidates = [c.strip() for c in raw_candidates if c.strip()]
     return candidates
