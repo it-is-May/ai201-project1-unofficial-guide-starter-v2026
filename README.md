@@ -230,23 +230,20 @@ letting the blanket answer stand.
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+### Criteria Results Overview
+None of the five criteria missed their overall target in the baseline evaluation run (`results/run_2026-09-29_1806_before.md`), so no criterion received a verdict of MISSED.
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+### Target Tightening Plan
+Because every criterion passed on the first try, the original targets were set too safely. Specifically, Criterion 1 permitted 1 failure out of 5 questions, allowing a 100% recurring failure on Question 3 ("Do I need to get the latest edition for every textbook?") to hide behind a passing aggregate score.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+* **Criterion to tighten:** Criterion 1 ("Retrieved chunk contains the answer")
+* **Original target:** 4 of 5
+* **Tighter target:** 5 of 5
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
+### Recurring Failure Analysis: Question 3
+* **Question:** "Do I need to get the latest edition for every textbook?"
+* **Pipeline Stage:** Retrieval & Scorer / Evaluation
+* **Mechanism:** The retrieval pipeline fetches `thread_textbook_editions.txt` and generates a correct answer explaining edition exceptions. However, string-matching in `scorer.py` evaluates exact phrase occurrences rather than semantic intent, resulting in an automated `fail` across all three baseline runs.
 
 ## The Improvement
 
