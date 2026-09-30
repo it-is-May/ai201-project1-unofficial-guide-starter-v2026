@@ -2,19 +2,6 @@
 
 Giao Nguyen. Corpus: `advice_threads`.
 
-> **This file is your submission.** Fill it in as you go — most sections get
-> written during the milestone that produces them, not at the end.
->
-> How the starter works, and every command you'll need, is in `RUNNING.md`.
-> Leave that file alone.
->
-> **Paste everything as text.** No screenshots, no video. A typed table gets
-> full credit; a picture of the same table gets none.
->
-> Delete these instruction blocks as you replace them. The `<!-- -->` comments
-> are notes to you and don't show up when the page renders — you can leave them
-> or remove them.
-
 ---
 
 # Unit 1
@@ -141,42 +128,6 @@ almost exactly in the middle of that gap rather than hugging either edge.
 | How do I change the oil in a diesel engine? | no | 0.896 |
 | What is the capital of Mongolia? | no | 0.938 |
 
-## How I Used AI
-
-**1. The `split_documents` rewrite.** I asked Claude to rewrite
-`split_documents()` to fix the bundling problem diagnosed in `criteria.md`:
-split on `--- reply N ---` boundaries instead of raw character count, and
-glue the thread title onto each chunk so it stays self-contained (needed
-because my shortest lone reply is only 35 characters). It came back with a
-regex split (`REPLY_HEADER = re.compile(r"^--- reply \d+.*?---$",
-re.MULTILINE)`) that groups replies into chunks of at most 2
-(`MAX_REPLIES_PER_CHUNK = 2`), prepends the title to every group, and falls
-back to treating the whole document as one chunk if no reply markers are
-found at all — that fallback wasn't something I asked for, Claude added it
-defensively for documents that don't match the thread format. I kept it since
-it costs nothing and doesn't affect my corpus (every document in
-`advice_threads` has reply markers), but I didn't just trust the summary: I
-ran `python app.py chunks -n 46` myself and checked the shortest chunk by
-hand (157 characters, `thread_clubs.txt#1`) to confirm the floor actually
-holds on the real trailing-lone-reply case, not just in theory.
-
-**2. Catching a milestone-ordering mistake in my criteria.** While drafting
-the "why this target" reasoning for criteria 1 and 3 in `criteria.md`, I
-asked Claude whether both needed rewriting given the chunking work I'd
-already done. It answered by conflating all five criteria under the same
-"write it blind, before you have results" rule. I caught the inconsistency by
-pasting the actual Milestone 2 instructions back at it, which forced a
-correction distinguishing criteria that can legitimately be reasoned from
-corpus structure alone (like #1) from ones that specifically need a real
-measured result before the "why" can be honest (like #3). I rewrote the
-criterion 3 reasoning myself once I understood the distinction, instead of
-letting the blanket answer stand.
-
-<!-- ── Stretch features ─────────────────────────────────────────────────────
-     Doing one? Say so here BEFORE you start. A feature this README never
-     claims earns nothing.
-     ───────────────────────────────────────────────────────────────────────── -->
-
 ---
 
 # Unit 2
@@ -262,11 +213,11 @@ The Criterion 1 diagnosis traced Question 3's recurring failure to the scorer, n
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieval finds target chunk | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
-| 2. Answer grounded in context | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
-| 3. Refuses out-of-scope | 4 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
-| 4. Cites sources | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
-| 5. Free of hallucinations | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 1. Retrieved chunk contains the answer | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 2. Every answer names a source | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 4. Chunks are the right size and don't bundle too many replies | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
+| 5. Answers don't state facts the source doesn't back up | 5 of 5 | MET (5/5) | MET (5/5) | MET (5/5) | MET |
 
 **Did it help?**
 
@@ -282,9 +233,32 @@ Yes. Question 3 moved from `FAIL` to `pass` across all three evaluation runs, br
 
      Milestone 5. -->
 
+Even though all 5 criteria achieve passing scores on the current test suite, three key limitations remain in the pipeline design:
+
+1. **Scorer Bag-of-Words Fallback:** In `scorer.py`, if exact substring matching fails, the judge falls back to verifying that every individual word in an expectation candidate exists somewhere in the answer. If a generated answer includes all target words scattered across different sentences or in an incorrect context, `scorer.py` will log a false-positive `pass`.
+2. **Relevance Gate Keyword Overlap:** The fixed distance threshold (`0.6`) effectively stops completely off-topic questions (e.g., diesel engines or world geography), but out-of-scope questions that share common campus terminology (such as asking about textbook or internship policies at a different university) could drop below `0.6` and bypass the gate.
+3. **Multi-Reply Structural Splitting:** `split_documents` caps chunk sizes at 2 replies per chunk to prevent over-bundling. However, if a thread contains a continuous advice chain spanning 3 or 4 replies, the context gets split across multiple chunks, meaning the retriever may only fetch partial advice.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+Knowing what I know now after running the baseline and post-fix evaluations, I would rewrite two of my five criteria to be more robust:
+
+1. **Criterion 1 (Answer Matching Expectation):** I would rewrite how expectations are defined in Criterion 1 to avoid relying on rigid exact-string matches. Question 3 failed initially not because the model gave a bad answer, but because the candidate splitter in the scorer couldn't parse comma-separated target phrases. I would write this criterion to evaluate semantic intent (or explicitly support flexible delimiters) rather than strict word matching.
+2. **Criterion 3 (Out-of-Scope Relevance Gate):** I would rewrite Criterion 3's test suite to include "near-miss" out-of-scope questions that share common academic terminology (e.g., asking about textbook or internship policies at a different university). The original criterion only used completely unrelated topics (like car maintenance or world history), which made the gate look 100% effective without testing its limits against domain-adjacent vocabulary overlap.
+
+---
+
+# How I Used AI
+
+**1. The `split_documents` rewrite.** I asked Claude to rewrite `split_documents()` to fix the bundling problem diagnosed in `criteria.md`: split on `--- reply N ---` boundaries instead of raw character count, and glue the thread title onto each chunk so it stays self-contained (needed because my shortest lone reply is only 35 characters). It came back with a regex split (`REPLY_HEADER = re.compile(r"^--- reply \d+.*?---$", re.MULTILINE)`) that groups replies into chunks of at most 2 (`MAX_REPLIES_PER_CHUNK = 2`), prepends the title to every group, and falls back to treating the whole document as one chunk if no reply markers are found at all — that fallback wasn't something I asked for, Claude added it defensively for documents that don't match the thread format. I kept it since it costs nothing and doesn't affect my corpus (every document in `advice_threads` has reply markers), but I didn't just trust the summary: I ran `python app.py chunks -n 46` myself and checked the shortest chunk by hand (157 characters, `thread_clubs.txt#1`) to confirm the floor actually holds on the real trailing-lone-reply case, not just in theory.
+
+**2. Catching a milestone-ordering mistake in my criteria.** While drafting the "why this target" reasoning for criteria 1 and 3 in `criteria.md`, I asked Claude whether both needed rewriting given the chunking work I'd already done. It answered by conflating all five criteria under the same "write it blind, before you have results" rule. I caught the inconsistency by pasting the actual Milestone 2 instructions back at it, which forced a correction distinguishing criteria that can legitimately be reasoned from corpus structure alone (like #1) from ones that specifically need a real measured result before the "why" can be honest (like #3). I rewrote the criterion 3 reasoning myself once I understood the distinction, instead of letting the blanket answer stand.
+
+**3. Scorer Bug Diagnosis & Regex Fix (Unit 2).** Used AI to trace the execution of `scorer.py` when diagnosing Question 3's recurring failure. Identified that `_split_candidates()` failed on comma-separated expectations and generated the updated delimiter regex `r"[;,|]"`.
+
+**4. Documentation & Retrospective.** Used AI to format evaluation tables, structure run logs, and refine reflection sections across Milestones 1–5.
